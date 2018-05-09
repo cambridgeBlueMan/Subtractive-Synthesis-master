@@ -1,0 +1,77 @@
+{\rtf1\ansi\ansicpg1252\cocoartf949\cocoasubrtf430
+{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fnil\fcharset0 Geneva;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red191\green0\blue0;\red0\green0\blue191;\red0\green115\blue0;
+\red96\green96\blue96;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs28 \cf2 // 56 lines of code\cf0 \
+(\
+\cf3 SynthDef\cf0 (\cf4 \\sfgrain\cf0 , \{\cf3 arg\cf0  bufnum=0, pan=0.0, startPos=0.0, amp=0.1, dur=0.04; \
+\cf3 var\cf0  grain; \
+grain= \cf3 PlayBuf\cf0 .ar(1,bufnum, \cf3 BufRateScale\cf0 .kr(bufnum)*1.5, 
+\f1 1, \cf3 BufFrames\cf0 .ir(bufnum)*startPos, 0
+\f0 )*(\cf3 EnvGen\cf0 .kr(\cf3 Env\cf0 .perc(0.01,dur),doneAction:2)-0.001);\
+\cf3 Out\cf0 .ar(0,\cf3 Pan2\cf0 .ar(grain, pan,0.225))\}).send(s); \
+)
+\f2\fs30 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+\cf0 (\
+\cf3 SynthDef\cf0 (\cf5 "noise"\cf0 , \
+	\{ \cf3 arg\cf0  out = 0, freq1, freq2, freq3, transTime1 = 3, sustTime = 3, transTime2 = 3; \
+   \cf3 var\cf0  signal, env;\
+	signal = \{ \cf3 Mix\cf0 (\
+					 	\cf3 BPF\cf0 .ar(\
+					  	\cf3 BrownNoise\cf0 .ar, \
+					   	[ freq1, freq2, freq3 ],\
+					   	0.5/[ freq1, freq2, freq3 ],\
+					  	4)\
+					)\
+				  	\}!2;\
+	env	  = \cf3 EnvGen\cf0 .kr(\
+					\cf3 Env\cf0 (	[ 0, 1, 1, 0 ], \
+						 	[transTime1, sustTime, \
+					 		 transTime2], \
+					 		\cf4 \\sine\cf0 ),\
+					1, \
+					doneAction:2);								\
+\cf3 Out\cf0 .ar(out, (signal * env), -1)\
+  \}).store\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ri-7220\ql\qnatural
+\cf0 )\
+\cf2 // load buffer								\cf0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\fs28 \cf0 b = \cf3 Buffer\cf0 .read(s,\cf5 "sounds/testgrain7.aif"\cf0 );
+\f2\fs30 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+\cf2 // run program\cf0 \
+(\
+r = \cf3 Routine\cf0 (\{\
+			loop(\{\
+					 s.sendMsg(\cf4 \\s_new\cf0 , \cf4 \\noise\cf0 , -1, 0, 1,\
+									 \cf4 \\freq1\cf0 , exprand(100.0, 1000.0),\
+									 \cf4 \\freq2\cf0 , exprand(100.0, 1000.0),\
+									 \cf4 \\freq3\cf0 , exprand(100.0, 1000.0)\
+									);\
+					 (3 + 3).wait\
+			\})\
+		\});\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+\cf3 SystemClock\cf0 .play(r);	
+\f0\fs28 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+\cf0 \{\
+\cf3 inf\cf0 .do\{\cf3 arg\cf0  i; \
+	\cf3 var\cf0  prop, timestart, timeend, lastval=0.6;\
+	prop= (i%300)/300;\
+	timestart= prop*0.8;\
+	timeend= prop*(0.8+(0.1*lastval));\
+	\cf3 Synth\cf0 (\cf4 \\sfgrain\cf0 ,[\cf4 \\bufnum\cf0 , b.bufnum, \cf4 \\startPos\cf0 ,rrand(timestart,timeend),\cf4 \\amp\cf0 , 0.005,  \
+	\cf4 \\pan\cf0 , lastval.rand2, \cf4 \\dur\cf0 , 0.1+(lastval*0.5)]);  \
+	(((lastval*0.2)+0.01).max(0.01)).wait\
+\}; \
+\}.fork;\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+\cf0  )\
+}

@@ -1,0 +1,137 @@
+{\rtf1\ansi\ansicpg1252\cocoartf949\cocoasubrtf430
+{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fnil\fcharset0 Geneva;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red191\green0\blue0;\red0\green0\blue0;\red0\green0\blue191;
+\red0\green115\blue0;\red96\green96\blue96;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs28 \cf2 // synthdefs\cf3 \
+\cf2 // granular synth\cf3 \
+\
+(\
+\cf4 SynthDef\cf3 (\cf5 \\sfgrain\cf3 , \{\cf4 arg\cf3  bufnum=0, pan=0.0, startPos=0.0, amp=0.1, dur=0.04; \
+\cf4 var\cf3  grain; \
+\cf2 // the important thing is that htis synth is passed a starting position, calculated elsewhere\cf3 \
+\cf2 // it then plays and is released because the envelope in the synth has reached an end\cf3 \
+\cf2 // so in our chuck implementation we nedd to use the SndBuf.pos parameter\cf3 \
+\cf2 // and we also need to define an envelope for the buffer\cf3 \
+\cf2 // and we then need to pan that\cf3 \
+grain= \cf4 PlayBuf\cf3 .ar(1,bufnum, \cf4 BufRateScale\cf3 .kr(bufnum)*1.5, 
+\f1 1, \cf4 BufFrames\cf3 .ir(bufnum)*startPos, 0
+\f0 )*(\cf4 EnvGen\cf3 .kr(\cf4 Env\cf3 .perc(0.01,dur),doneAction:2)-0.001);\
+\
+\cf4 Out\cf3 .ar(0,\cf4 Pan2\cf3 .ar(grain, pan,0.2))\}).send(s); \
+)
+\f1 \
+
+\f0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+
+\f2\fs30 \cf2 // filter synth\cf3 \
+(\
+\cf4 SynthDef\cf3 (\cf6 "noise"\cf3 , \
+	\{ \cf4 arg\cf3  out = 0, freq1, freq2, freq3, transTime1 = 3, sustTime = 3, transTime2 = 3; \
+   \cf2 // transition times and sustain time remain constant and give a total\cf3 \
+   \cf2 // envelope length of 9 seconds\cf3 \
+   \cf4 var\cf3  signal, env;\
+	signal = \{ \cf4 Mix\cf3 (\
+					 	\cf4 BPF\cf3 .ar(\
+					 	\cf2 // brown noise is signal into the BPF\cf3 \
+					  	\cf4 BrownNoise\cf3 .ar, \
+					  	\cf2 // next line is cut off freq, so this presumable creates\cf3 \
+					  	\cf2 // 3 instances of the filtered signal\cf3 \
+					  	[ freq1, freq2, freq3 ],\
+					  	\cf2 // reciprocal of Q, bandwidth/cutoff freq\cf3 \
+					  	\cf2 // originally 0.5, which is fairly clean\cf3 \
+					  	\cf2 // at 1.5 there is a bit of noise\cf3 \
+					  	\cf2 // at 10.5 it is far too course\cf3 \
+					  	0.5/[ freq1, freq2, freq3 ],\
+					  	\cf2 // a mul\cf3 \
+					  	4)\
+					)\
+					\cf2 // I think ! is make 2 instances of\cf3 \
+				  	\}!2;\
+	env	  = \cf4 EnvGen\cf3 .kr(\
+					\cf4 Env\cf3 (	[ 0, 1, 1, 0 ], \
+						 	[transTime1, sustTime, \
+					 		 transTime2], \
+					 		\cf5 \\sine\cf3 ),\
+					1, \
+					doneAction:2);								\
+\cf4 Out\cf3 .ar(out, (signal * env), -1)\
+  \}).store\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ri-7220\ql\qnatural
+\cf3 )\
+\cf2 // load buffer									\cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f1\fs28 \cf3 b = \cf4 Buffer\cf3 .read(s,\cf6 "sounds/testgrain7.aif"\cf3 );\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+
+\f2\fs30 \cf3 \
+\cf2 // run program\cf3 \
+(\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+
+\f0\fs28 \cf2 //var lastval=0.6;
+\f2\fs30 \cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+\cf3 r = \cf4 Routine\cf3 (\{\
+			loop(\{\
+					 s.sendMsg(\cf5 \\s_new\cf3 , \cf5 \\noise\cf3 , -1, 0, 1,\
+									 \cf5 \\freq1\cf3 , exprand(100.0, 1000.0),\
+									 \cf5 \\freq2\cf3 , exprand(1000.0, 1000.0),\
+									 \cf5 \\freq3\cf3 , exprand(100.0, 1000.0)\
+									);\
+					 (3 + 3).wait\
+			\})\
+		\});\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+\cf4 SystemClock\cf3 .play(r)	\
+ )\
+(\
+// here we have an infinite loop
+\f0\fs28 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+\cf3 \{\
+\cf4 inf\cf3 .do\{\cf4 arg\cf3  i; \
+	\cf4 var\cf3  prop, timestart, timeend, lastval=0.6; \cf2 //.6;\
+	// prop holds values between 1/300 (0 really, but ...) and 1\cf3 \
+	prop= (i%300)/300;\
+	timestart= prop*0.8; \cf2 // will have values in the range 1/300 + .8 to 1.8\cf3 \
+	timeend= prop*(0.8+(0.1*lastval)); \cf2 // will have values in the range \cf3 \
+	\cf2 // min (.8 + .06)/300 = 3 milli secs approx.\cf3 \
+	\cf2 // max \cf3 \
+	\cf4 Synth\cf3 (\cf5 \\sfgrain\cf3 ,[\cf5 \\bufnum\cf3 , b.bufnum, \cf5 \\startPos\cf3 ,rrand(timestart,timeend),\cf5 \\amp\cf3 , 0.005, \cf2 // exprand(0.005,0.1), \cf3 \
+	\cf5 \\pan\cf3 , lastval.rand2, \cf5 \\dur\cf3 , 0.1+(lastval*0.5)]);  \
+	(((lastval*0.2)+0.01).max(0.01)).wait\
+\}; \
+\}.fork;\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural
+\cf3  )\
+a=\cf4 Pfunc\cf3 (\{
+\f2\fs30 exprand(100.0, 1000.0)\});\
+
+\f0\fs28 \cf2 //b=Pseq([a],6);\cf3 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx8440\ql\qnatural
+
+\f2\fs30 \cf4 Pbind\cf3 (\cf5 \\instrument\cf3 , \cf5 \\noise\cf3 ,\
+		\cf5 \\dur\cf3 , 6,\
+		\cf5 \\freq1\cf3 , a,\
+		\cf5 \\freq2\cf3 , a,\
+		\cf5 \\freq3\cf3 , a\
+	).play\
+ \
+\
+\
+\
+\
+\cf4 Pbind\cf3 (\cf5 \\instrument\cf3 , \cf5 \\noise\cf3 ,\
+		\cf5 \\dur\cf3 , 6,\
+		\cf5 \\freq1\cf3 , \cf4 Pseq\cf3 ([100,200,300]),\
+		\cf5 \\freq2\cf3 , \cf4 Pseq\cf3 ([200,400,600]),\
+		\cf5 \\freq3\cf3 , \cf4 Pseq\cf3 ([300,600,900])\
+	).play\
+\
+}

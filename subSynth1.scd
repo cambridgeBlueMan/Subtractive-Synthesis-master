@@ -103,7 +103,13 @@ s.waitForBoot({
 	// Patterns
 
 	// ************************************************************************************************
+
+	// 	the idea now is that there is a sngle set of proxies
+	// and the source is set for these on change of patter.
+	// i.e. there is just one pattern and it contains a set of proxies and all that ever changes is the source for the pproxies
 	// make dictionary for the proxies
+
+
 	myProxies[0] = Dictionary.new; // should default to size 8
 	myOscFuncs[0] = Dictionary.new; // should default to size 8
 	// make a set of pattern proxies
@@ -114,6 +120,9 @@ s.waitForBoot({
 	myProxies[0]["rq"]= PatternProxy.new(Pwhite(0.001, 0.05));
 
 	// make a set of oscFuncs
+
+	// by the same token there only needs to be one OSVFunc for one instance of a pattern
+	// on change of pttern proxies we need also
 	myOscFuncs[0]["freq"]= OSCFunc.new({|msg|
 		if (msg[1] == 0.0, {
 			myProxies[0]["freq"].source = Pwhite(100, 5500)
